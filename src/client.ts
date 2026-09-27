@@ -1,33 +1,44 @@
 import { Buffer } from "node:buffer";
 
 import { accessRequestMethods } from "./access-requests.js";
+import { datasetQueryMethods } from "./dataset-query.js";
+import { issuanceMethods } from "./issuance.js";
+import { pollingMethods } from "./polling.js";
 import {
   createTransport,
   exactKeys,
-  record,
   RazielClientError,
   type RazielClientOptions,
   type RequestOptions,
+  record,
 } from "./transport.js";
 import { AGENT_API_FORMAT_VERSION, type AgentMe, MAX_PROTOBUF_TIMESTAMP_SECONDS } from "./types.js";
 
 export {
-  RazielClientError,
   type RazielApiErrorCode,
+  RazielClientError,
   type RazielClientErrorCode,
   type RazielClientOptions,
   type RequestOptions,
 } from "./transport.js";
 
-export interface RazielClient extends ReturnType<typeof accessRequestMethods> {
+export interface RazielClient
+  extends ReturnType<typeof accessRequestMethods>,
+    ReturnType<typeof issuanceMethods>,
+    ReturnType<typeof pollingMethods>,
+    ReturnType<typeof datasetQueryMethods> {
   me(options?: RequestOptions): Promise<AgentMe>;
 }
 
 /** Caller-owned intent and signing. No call retries or starts a proof implicitly. */
 export function createRazielClient(options: RazielClientOptions): RazielClient {
   const transport = createTransport(options);
+  const access = accessRequestMethods(transport);
   return {
-    ...accessRequestMethods(transport),
+    ...access,
+    ...issuanceMethods(options.signer, options.timeoutMs),
+    ...pollingMethods(access),
+    ...datasetQueryMethods(transport, options.signer, options.timeoutMs),
     me(requestOptions = {}) {
       return transport.request({
         ...requestOptions,

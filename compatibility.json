@@ -1,7 +1,7 @@
 {
   "packageVersion": "0.1.0",
   "backendRepository": "https://github.com/gitaalekhyapaul/hypha-backend",
-  "backendProtocolRevision": "c0310a4",
+  "backendProtocolBaseRevision": "abff0c8edaf2d0841a54dfb62d60bfabf6eb0893",
   "agentApiDecision": "ADR-0020",
   "agentApiFormatVersion": 1,
   "implementedHttpOperations": [
@@ -9,13 +9,17 @@
     "POST /api/agent/v1/access-requests",
     "GET /api/agent/v1/access-requests",
     "GET /api/agent/v1/access-requests/{requestId}",
-    "POST /api/agent/v1/access-requests/{requestId}/cancel"
+    "POST /api/agent/v1/access-requests/{requestId}/cancel",
+    "POST /api/agent/v1/access-requests/{requestId}/resume",
+    "POST /api/agent/v1/access-requests/{requestId}/issuance",
+    "POST /api/datasets/{datasetId}/protected-query"
   ],
-  "stagedProtocolChange": "B-0065, uncommitted backend generated schemas",
+  "backendProtocolBaton": "B-0066",
+  "releaseStatus": "candidate-not-published",
   "protobufRuntimeVersion": "2.12.1",
   "generatedSourceRoot": "packages/proto-ts/src/gen/raziel/v1",
   "generatedSourceSha256": {
-    "agent_api_pb.ts": "bcd89c83c8dd66fc16d6c346d2298b5bb5f80c685b0a49c4bf8fb3f9c2c98dca",
+    "agent_api_pb.ts": "042104a2908797c20c5d8992a4029644110b9107ea7f683ec9cc006bbda87ea0",
     "capability_pb.ts": "8c4860158ae3b2b5be9ea033d3d093516c0cfb32eb20ac61fa0a513377f38526",
     "common_pb.ts": "c6fe0518762b3c0c39a3027debd3a64ead0b7113896ece8b4202fb47a025199c",
     "snapshot_pb.ts": "24f8d99570dce617a8e169cedca8be4046b9c5d0ed5b643d8f5cda267add8dda"

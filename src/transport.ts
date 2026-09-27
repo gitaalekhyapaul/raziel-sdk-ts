@@ -33,6 +33,8 @@ export type RazielClientErrorCode =
   | "TIMEOUT"
   | "ABORTED"
   | "INVALID_RESPONSE"
+  | "AUTHORIZATION_REJECTED"
+  | "PROTECTED_QUERY_UNAVAILABLE"
   | "HTTP_ERROR";
 
 export class RazielClientError extends Error {
@@ -40,6 +42,7 @@ export class RazielClientError extends Error {
     public readonly code: RazielClientErrorCode,
     public readonly status: number | undefined = undefined,
     public readonly retryable = false,
+    public readonly retryAfterMs: number | undefined = undefined,
   ) {
     super(`Raziel request failed: ${code}`);
     this.name = "RazielClientError";
@@ -207,7 +210,7 @@ function parseTokenId(token: string): string {
   return tokenId;
 }
 
-async function withTimeout<T>(
+export async function withTimeout<T>(
   timeoutMs: number,
   callerSignal: AbortSignal | undefined,
   operation: (signal: AbortSignal) => Promise<T>,
@@ -314,6 +317,17 @@ export function exactKeys(value: Record<string, unknown>, keys: readonly string[
 async function apiError(response: Response, signal: AbortSignal): Promise<RazielClientError> {
   try {
     const value = await readJson(response, signal, 4_096);
+    if (record(value) && exactKeys(value, ["error"])) {
+      if (response.status === 403 && value.error === "AUTHORIZATION_REJECTED")
+        return new RazielClientError("AUTHORIZATION_REJECTED", 403);
+      if (response.status === 503 && value.error === "PROTECTED_QUERY_UNAVAILABLE")
+        return new RazielClientError(
+          "PROTECTED_QUERY_UNAVAILABLE",
+          503,
+          true,
+          retryAfter(response),
+        );
+    }
     if (
       record(value) &&
       exactKeys(value, ["error"]) &&
@@ -326,11 +340,25 @@ async function apiError(response: Response, signal: AbortSignal): Promise<Raziel
       const code = value.error.code as RazielApiErrorCode;
       const statuses: readonly number[] = API_ERROR_STATUS[code];
       if (statuses.includes(response.status)) {
-        return new RazielClientError(code, response.status, value.error.retryable);
+        return new RazielClientError(
+          code,
+          response.status,
+          value.error.retryable,
+          retryAfter(response),
+        );
       }
     }
   } catch {
     // Server diagnostics and malformed error bodies never become public error messages.
   }
   return new RazielClientError("HTTP_ERROR", response.status);
+}
+
+function retryAfter(response: Response): number | undefined {
+  const value = response.headers.get("retry-after");
+  if (value === null || value.length > 128) return undefined;
+  const delay = /^(0|[1-9][0-9]*)$/.test(value)
+    ? Number(value) * 1000
+    : Date.parse(value) - Date.now();
+  return Number.isFinite(delay) ? Math.min(30_000, Math.max(0, Math.ceil(delay))) : undefined;
 }

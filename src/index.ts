@@ -1,7 +1,10 @@
+export type { ListAccessRequestsOptions } from "./access-requests.js";
+export type { DatasetQuery, DatasetQueryResult } from "./dataset-query.js";
 export * from "./agent.js";
 export * from "./canonical.js";
 export * from "./client.js";
-export type { ListAccessRequestsOptions } from "./access-requests.js";
+export type { SignIssuanceOptions } from "./issuance.js";
+export type { WaitForAccessRequestOptions } from "./polling.js";
 export * from "./public.js";
 export { createWebCryptoSigner } from "./signer.js";
 export * from "./types.js";

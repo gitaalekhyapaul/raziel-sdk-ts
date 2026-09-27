@@ -5,20 +5,23 @@ import { canonicalizeRequestTarget } from "./canonical.js";
 import {
   type AccessIntent,
   AccessIntentSchema,
+  type AccessIssuanceSubmission,
+  AccessIssuanceSubmissionSchema,
   type AccessRequest,
-  AccessRequestSchema,
   type AccessRequestMutation,
   AccessRequestMutationSchema,
+  AccessRequestSchema,
   AccessRequestState,
   type ListAccessRequestsResponse,
   ListAccessRequestsResponseSchema,
 } from "./gen/raziel/v1/agent_api_pb.js";
+import { encodeIssuance } from "./issuance.js";
 import { parseProtoJson } from "./protojson.js";
 import {
   type createTransport,
-  record,
   RazielClientError,
   type RequestOptions,
+  record,
 } from "./transport.js";
 import { MAX_PROTOBUF_TIMESTAMP_SECONDS } from "./types.js";
 
@@ -119,10 +122,43 @@ export function accessRequestMethods(transport: ReturnType<typeof createTranspor
         parse: (value, status) => parseRequest(value, status, id),
       });
     },
+    async resumeAccessRequest(
+      id: string,
+      mutation: AccessRequestMutation,
+      options: RequestOptions = {},
+    ): Promise<AccessRequest> {
+      requestId(id);
+      return transport.request({
+        ...options,
+        method: "POST",
+        target: `${ROOT}/${id}/resume`,
+        body: encodeMutation(mutation),
+        statuses: [200, 202],
+        maxResponseBytes: MAX_RESPONSE_BYTES,
+        parse: (value, status) => parseRequest(value, status, id),
+      });
+    },
+    async submitIssuance(
+      id: string,
+      submission: AccessIssuanceSubmission,
+      options: RequestOptions = {},
+    ): Promise<AccessRequest> {
+      requestId(id);
+      const value = encodeIssuance(submission, transport.publicKey);
+      return transport.request({
+        ...options,
+        method: "POST",
+        target: `${ROOT}/${id}/issuance`,
+        body: boundedBody(toJson(AccessIssuanceSubmissionSchema, value)),
+        statuses: [200, 202],
+        maxResponseBytes: MAX_RESPONSE_BYTES,
+        parse: (value, status) => parseRequest(value, status, id),
+      });
+    },
   };
 }
 
-function encodeIntent(intent: AccessIntent): string {
+export function encodeIntent(intent: AccessIntent): string {
   try {
     messageKeys(
       intent,
@@ -221,7 +257,7 @@ function parseRequest(value: unknown, status: number, id: string): AccessRequest
   }
 }
 
-function validateRequest(row: AccessRequest) {
+export function validateRequest(row: AccessRequest) {
   requestId(row.requestId);
   claim(row.agentId);
   claim(row.taskId);

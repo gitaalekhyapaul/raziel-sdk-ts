@@ -19,6 +19,16 @@ export function parseProtoJson<Desc extends DescMessage>(
 }
 
 function checkJson(schema: DescMessage, value: unknown): void {
+  if (schema.typeName === "google.protobuf.Timestamp") {
+    if (
+      typeof value !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value) ||
+      !Number.isFinite(Date.parse(value)) ||
+      new Date(value).toISOString().replace(".000Z", "Z") !== value
+    )
+      throw new Error("invalid timestamp");
+    return;
+  }
   if (schema.typeName === "google.protobuf.Duration") {
     if (typeof value !== "string") throw new Error("invalid duration");
     return;

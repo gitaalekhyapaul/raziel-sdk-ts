@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "Raziel agent signing, identity, and access-request client",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gitaalekhyapaul/raziel-sdk-ts.git"
+  },
   "type": "module",
   "engines": {
     "node": ">=24.18.0"

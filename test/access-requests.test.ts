@@ -561,6 +561,7 @@ describe("strict public responses", () => {
     expect(Object.keys(publicDtos).sort()).toEqual(
       [
         "AccessIntentSchema",
+        "AccessIssuanceSubmissionSchema",
         "AccessPolicyBindingSchema",
         "AccessRequestContextEntrySchema",
         "AccessRequestMutationSchema",

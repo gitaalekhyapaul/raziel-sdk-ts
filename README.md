@@ -9,8 +9,8 @@ and authenticated identity and access-request calls. Node.js 24.18.0 or newer is
 It checks the returned identity and audience against the caller's configured key.
 The response is identity metadata, not permission to access data.
 
-Access-request create/list/get/cancel methods are implemented. Operator approval,
-polling, issuance submission, and protected-query transport are outside this slice. The existing
+Access-request create/list/get/cancel/resume, exact proposal signing, and issuance
+submission are implemented. Polling and protected-query transport remain pending. The existing
 capability and protected-request signing helpers remain available. They do not
 contact a server or verify a proof.
 
@@ -147,7 +147,63 @@ All methods, including `me`, accept an optional `AbortSignal`. Aborting returns 
 coarse `ABORTED` code, cancels the local fetch/body wait, and blocks a late send.
 It does not send a server cancellation. A 202 cancellation response means accepted,
 not confirmed termination. A completion race can return `READY`.
-No method polls, resumes dispatch, submits issuance, or starts a proof implicitly.
+No method resumes dispatch, submits issuance, or starts a proof implicitly.
+`resumeAccessRequest` and `submitIssuance` are explicit commands.
+
+### Final Issuance Signature
+
+`client.signIssuance(intent, request)` validates an `AWAITING_SIGNATURE` proposal
+against the caller's retained intent and public key. It returns the generated
+`AccessIssuanceSubmission` message without making an HTTP request. It uses the
+existing canonical capability commitment, not a hash of Protobuf bytes.
+
+Persist the returned message in the agent's private state before calling
+`client.submitIssuance(requestId, submission)`. Retrying that call preserves the exact
+issuance body and refreshes only the outer API signature. Do not call `signIssuance`
+again to recover an uncertain submission. The default signing timeout is 10 seconds,
+or the client's `timeoutMs`. An abort stops the local wait, not the external signer
+or server job. No private signing key enters Raziel.
+
+`client.resumeAccessRequest(requestId, mutation)` explicitly returns an offline
+signer to the serial workflow. It needs the latest request generation. A new proposal
+then requires a new explicit signature. There is no automatic replacement proof.
+
+### Wait And Reuse
+
+`client.waitForAccessRequest(requestId, { signal, deadlineUnixMilliseconds })`
+reads immediately, then polls at 5, 10, 20, and 30-second intervals. Subsequent
+intervals remain 30 seconds. It returns on `AWAITING_SIGNATURE`, `WAITING_FOR_AGENT`,
+or any terminal state. Callers explicitly sign or resume, then start another wait.
+The default overall deadline is 24 hours. A supplied deadline is an absolute Unix
+timestamp in milliseconds. The wait retries transient reads, never commands.
+Retry-After is bounded to 30 seconds. Abort stops only the local wait.
+
+After `READY`, the returned `capability` bytes can be retained and reused:
+
+```ts
+const current = await client.waitForAccessRequest(request.requestId, { signal });
+if (current.state === AccessRequestState.READY) {
+  const query = {
+    fromOccurredAt: "2026-09-01T00:00:00Z",
+    toOccurredAt: "2026-09-02T00:00:00Z",
+    limit: 20,
+  };
+  const first = await client.queryDataset(current.datasetId, current.capability, query, { signal });
+  const repeated = await client.queryDataset(current.datasetId, current.capability, query, { signal });
+}
+```
+
+Each query signs the existing protected-request envelope, then separately signs the
+API request containing it. Both nonces are fresh on every call. A query is one read
+attempt with no automatic retry. Repeating it can produce another receipt, never a
+new proof. Query windows are at most 31 days and 100 rows, with whole-second UTC
+timestamps. The returned synthetic rows and audit receipt are bounded and typed.
+`verification_path` reports `VERIFIER` or `CACHE` from the gateway.
+
+Local key/scope checks and response validation do not verify a Plonk proof. Only
+the independent gateway/verifier authorizes a read. Authentication or inbox approval
+alone cannot release data. Callers must retain the original intent and exact signed
+issuance attempt for recovery. The SDK never persists private keys or tokens itself.
 
 Generated public DTOs are available from the root and `./public` entry points.
 The legacy signing-context type retains its name. The generated context type is
@@ -167,17 +223,20 @@ interface AgentMe {
 }
 ```
 
-`RazielClientError` exposes `code`, optional HTTP `status`, and `retryable`.
+`RazielClientError` exposes `code`, optional HTTP `status`, `retryable`, and optional
+bounded `retryAfterMs`.
 It accepts the public API error envelope `{ error: { code, retryable } }`.
 401 maps to `NOT_AUTHORIZED`, 409 replay to `REQUEST_REPLAYED`, and 503 to
-`SERVICE_UNAVAILABLE`. Retry metadata never triggers an automatic retry.
+`SERVICE_UNAVAILABLE`. Protected queries retain the existing coarse
+`AUTHORIZATION_REJECTED` and `PROTECTED_QUERY_UNAVAILABLE` codes. Low-level methods
+never retry automatically. Only the explicit read-only wait helper retries reads.
 Unrecognized server bodies and provider, signer, or transport diagnostics are
 not copied into errors. A timeout is an unknown outcome, not proof of rejection.
 
 ## Compatibility
 
-`compatibility.json` records base backend protocol revision `c0310a4`, the staged
-B-0065 generated schema hashes, ADR-0020, and
+`compatibility.json` records base backend protocol revision `abff0c8`, the staged
+B-0066 generated schema hashes, ADR-0020, and
 the public canonical vector references. The Rust agent-auth fixture is copied
 into the test tree and checks exact message, key hash, body hash, and signature.
 Public test fixtures are excluded from the npm tarball.
