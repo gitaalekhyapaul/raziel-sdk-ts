@@ -1,0 +1,51 @@
+{
+  "name": "@gitaalekhyapaul/raziel-sdk-ts",
+  "version": "0.1.0",
+  "description": "Raziel agent signing, identity, and access-request client",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24.18.0"
+  },
+  "packageManager": "pnpm@11.14.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "compatibility.json"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./compatibility.json": "./compatibility.json",
+    "./public": {
+      "types": "./dist/public.d.ts",
+      "import": "./dist/public.js"
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "biome lint src test",
+    "format:check": "biome format src test package.json tsconfig.json tsconfig.build.json compatibility.json biome.json vitest.config.mjs",
+    "prepack": "pnpm build"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "2.12.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.4",
+    "@types/node": "24.13.3",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

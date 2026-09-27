@@ -1,0 +1,26 @@
+{
+  "packageVersion": "0.1.0",
+  "backendRepository": "https://github.com/gitaalekhyapaul/hypha-backend",
+  "backendProtocolRevision": "c0310a4",
+  "agentApiDecision": "ADR-0020",
+  "agentApiFormatVersion": 1,
+  "implementedHttpOperations": [
+    "GET /api/agent/v1/me",
+    "POST /api/agent/v1/access-requests",
+    "GET /api/agent/v1/access-requests",
+    "GET /api/agent/v1/access-requests/{requestId}",
+    "POST /api/agent/v1/access-requests/{requestId}/cancel"
+  ],
+  "stagedProtocolChange": "B-0065, uncommitted backend generated schemas",
+  "protobufRuntimeVersion": "2.12.1",
+  "generatedSourceRoot": "packages/proto-ts/src/gen/raziel/v1",
+  "generatedSourceSha256": {
+    "agent_api_pb.ts": "bcd89c83c8dd66fc16d6c346d2298b5bb5f80c685b0a49c4bf8fb3f9c2c98dca",
+    "capability_pb.ts": "8c4860158ae3b2b5be9ea033d3d093516c0cfb32eb20ac61fa0a513377f38526",
+    "common_pb.ts": "c6fe0518762b3c0c39a3027debd3a64ead0b7113896ece8b4202fb47a025199c",
+    "snapshot_pb.ts": "24f8d99570dce617a8e169cedca8be4046b9c5d0ed5b643d8f5cda267add8dda"
+  },
+  "canonicalContracts": ["ADR-0002", "ADR-0011", "ADR-0014", "ADR-0020"],
+  "canonicalVectors": ["test/index.test.ts", "test/fixtures/agent-api-request-signature-v1.json"],
+  "agentApiRustVectorStatus": "matching-public-rust-vector"
+}
