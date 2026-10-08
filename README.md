@@ -9,8 +9,8 @@ and authenticated identity and access-request calls. Node.js 24.18.0 or newer is
 It checks the returned identity and audience against the caller's configured key.
 The response is identity metadata, not permission to access data.
 
-Access-request create/list/get/cancel/resume, exact proposal signing, and issuance
-submission are implemented. Polling and protected-query transport remain pending. The existing
+Access-request create/list/get/cancel/resume, exact proposal signing, issuance
+submission, bounded polling, and protected-query transport are implemented. The existing
 capability and protected-request signing helpers remain available. They do not
 contact a server or verify a proof.
 
@@ -79,7 +79,7 @@ explicit invocation. The client never calls it or creates a replacement identity
 
 ## Access Requests
 
-The client exposes four one-shot methods:
+The client exposes six one-shot access-request HTTP methods:
 
 | Method | Input | Generated result | HTTP success |
 | --- | --- | --- | --- |
@@ -87,6 +87,8 @@ The client exposes four one-shot methods:
 | `listAccessRequests(options?)` | `limit` 1-50, optional `cursor` and `signal` | `ListAccessRequestsResponse` | 200 |
 | `getAccessRequest(requestId, options?)` | Lowercase UUIDv4 | `AccessRequest` | 200 |
 | `cancelAccessRequest(requestId, mutation, options?)` | `AccessRequestMutation` | `AccessRequest` | 200 or 202 |
+| `resumeAccessRequest(requestId, mutation, options?)` | `AccessRequestMutation` | `AccessRequest` | 200 or 202 |
+| `submitIssuance(requestId, submission, options?)` | `AccessIssuanceSubmission` | `AccessRequest` | 200 or 202 |
 
 Use Buf's `create` with the exported schemas. In-memory integers are `bigint` and
 bytes are `Uint8Array`. HTTP uses decimal strings and canonical padded base64.
@@ -247,8 +249,18 @@ canonical helpers, constants, and types. The legacy `RAZIEL_SDK_PACKAGE` value
 remains `@raziel/sdk-ts`. `getSdkPackageInfo()` retains its M5 fields and values.
 Use `RAZIEL_PUBLIC_SDK_PACKAGE` for this package's published name.
 
-This release is intended for a pinned local tarball during backend migration.
-No npm publication or complete M6 access workflow is claimed here.
+This initial release retains the B-0066 protocol and SDK implementation. The demo
+repositories can keep their pinned candidate tarballs during migration. A public
+package release does not establish a completed live M6 or M7 demonstration.
+
+## Installation
+
+```bash
+npm install @gitaalekhyapaul/raziel-sdk-ts@0.1.0
+```
+
+Import the public ESM entry point and supply your own signer and token provider.
+The SDK contains no operator credentials, private policy, or relationship snapshot.
 
 ## Development
 

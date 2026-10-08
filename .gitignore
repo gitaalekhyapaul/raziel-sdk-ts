@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 
 # Local validation artifacts
 .validation/
+
+# macOS metadata
+.DS_Store

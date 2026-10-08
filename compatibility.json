@@ -15,7 +15,7 @@
     "POST /api/datasets/{datasetId}/protected-query"
   ],
   "backendProtocolBaton": "B-0066",
-  "releaseStatus": "candidate-not-published",
+  "releaseStatus": "initial-public-release",
   "protobufRuntimeVersion": "2.12.1",
   "generatedSourceRoot": "packages/proto-ts/src/gen/raziel/v1",
   "generatedSourceSha256": {
